@@ -1,5 +1,5 @@
 /*
-  ЯСНА — subtle procedural marble backdrop for the homepage hero.
+  Beauty Expert Clinic — subtle procedural marble backdrop for the homepage hero.
   Progressive enhancement only: a static hero image/gradient always sits
   underneath (#marble-canvas is layered on top of it), so if WebGL, Three.js
   or prefers-reduced-motion rule this out, the page looks correct either way.

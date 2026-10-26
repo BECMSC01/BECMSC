@@ -1,5 +1,5 @@
 /*
-  ЯСНА site search widget.
+  Beauty Expert Clinic site search widget.
   Searches window.SITE_SERVICES (assets/js/search-data.js) by title,
   description and category. Powers the inline dropdown suggestions on every
   page and the full results list on search.html.

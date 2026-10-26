@@ -1,10 +1,10 @@
 {
-  "name": "ЯСНА — эстетическая медицина",
-  "short_name": "ЯСНА",
+  "name": "Beauty Expert Clinic — эстетическая медицина",
+  "short_name": "Beauty Expert Clinic",
   "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#FAF8F5",
-  "theme_color": "#2E2E2E",
+  "background_color": "#F8F7F3",
+  "theme_color": "#343A3A",
   "icons": [
     {
       "src": "/assets/img/favicons/icon-192-mark.png",
