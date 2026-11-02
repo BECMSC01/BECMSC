@@ -29,6 +29,17 @@ document.addEventListener('DOMContentLoaded', function () {
   }, { threshold: 0.05 });
   document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
 
+  // Results videos — autoplay only while the card is actually visible
+  // (saves bandwidth/battery instead of playing all cards at once)
+  var videoIO = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      var v = e.target;
+      if (e.isIntersecting) { v.play().catch(function () {}); }
+      else { v.pause(); }
+    });
+  }, { threshold: 0.35 });
+  document.querySelectorAll('.lazy-video').forEach(function (v) { videoIO.observe(v); });
+
   // Cookie consent banner (152-ФЗ / cookie notice)
   (function () {
     try {
