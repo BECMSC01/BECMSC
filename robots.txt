@@ -22,4 +22,4 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
-Sitemap: https://yasna.clinic/sitemap.xml
+Sitemap: https://becmsc.ru/sitemap.xml
