@@ -239,34 +239,56 @@
 <!-- /Yandex.Metrika counter -->
 </head>
 <body class="grain marble-field">
-<header class="sticky top-0 z-50 glass-header">
-  <div class="max-w-7xl mx-auto px-6 lg:px-10 py-3 flex flex-wrap items-center justify-between gap-4">
-    <a href="/" class="flex items-center gap-2 sm:gap-2.5 group shrink-0">
-      <img src="/assets/img/logo/yasna-mark-color.png" alt="" class="h-[39px] sm:h-[46px] w-auto group-hover:opacity-80 transition" />
+<header id="site-header" class="sticky top-0 z-50 glass-header">
+  <div class="max-w-8xl mx-auto px-5 sm:px-6 lg:px-10 xl:px-14 h-[92px] sm:h-[100px] flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-3 group shrink-0">
+      <img src="/assets/img/logo/yasna-mark-color.png" alt="" class="h-[46px] sm:h-[55px] w-auto group-hover:opacity-80 transition" />
       <span class="flex flex-col leading-none">
-        <span class="serif text-[16px] sm:text-[20px] uppercase tracking-wide2 text-wine group-hover:opacity-70 transition">Beauty Expert Clinic</span>
-        
+        <span class="serif text-[18px] sm:text-[22px] uppercase tracking-wide2 text-wine group-hover:opacity-70 transition">Beauty Expert Clinic</span>
+        <span class="hidden sm:block mt-1"><span class="block text-[9px] uppercase tracking-wide2 text-silverDeep whitespace-nowrap">Экспертная косметология</span></span>
+        <span class="sr-only"> — Чистота · Ясность · Гармония · Доверие</span>
       </span>
     </a>
-    <div class="flex flex-col gap-2.5">
-      <nav class="flex items-center justify-between gap-5 sm:gap-7 text-[11px] uppercase tracking-wide2 text-silverDeep whitespace-nowrap">
-        <a href="/#services" class="hover:text-graphite transition">Услуги</a>
-        <a href="/about.html" class="hidden sm:inline hover:text-graphite transition">О клинике</a>
-        <a href="/events.html" class="hidden sm:inline hover:text-graphite transition">События</a>
-        <a href="/zhurnal.html" class="hidden sm:inline hover:text-graphite transition">Журнал</a>
-        <a href="https://n2367537.yclients.com" target="_blank" rel="noopener" class="hover:text-graphite transition">Запись</a>
-      </nav>
-      <div class="relative" data-search-widget>
-        <form data-search-form onsubmit="return false;">
-          <label for="site-search-page" class="sr-only">Поиск по услугам</label>
-          <div class="relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-silver text-xs pointer-events-none"></i>
-            <input type="text" id="site-search-page" data-search-input autocomplete="off" placeholder="Поиск по услугам…" class="w-full bg-white border border-line rounded-full pl-9 pr-16 py-2 text-xs placeholder:text-silver focus:outline-none focus:border-graphite transition" />
-            <button type="submit" data-search-submit aria-label="Найти" class="absolute right-1 top-1 bottom-1 btn btn-primary btn-sm rounded-full px-3.5">Найти</button>
-          </div>
-        </form>
-        <div data-search-results class="hidden absolute z-40 left-0 right-0 mt-2 bg-white border border-line rounded-2xl shadow-xl overflow-hidden divide-y divide-line text-left"></div>
+
+    <nav class="hidden xl:flex items-center gap-6 2xl:gap-8 text-[11px] uppercase tracking-wide2 text-graphite whitespace-nowrap">
+      <a href="/#services" class="nav-link">Услуги</a>
+      <a href="/about.html" class="nav-link">О клинике</a>
+      <a href="/doctors.html" class="nav-link">Врачи</a>
+      <a href="/events.html" class="nav-link">События</a>
+      <a href="/zhurnal.html" class="nav-link">Журнал</a>
+      <a href="/license.html" class="nav-link">Лицензия</a>
+      <a href="/contacts.html" class="nav-link">Контакты</a>
+    </nav>
+
+    <div class="hidden xl:flex items-center gap-3 2xl:gap-4 shrink-0">
+      <a href="/search.html" aria-label="Поиск" class="icon-btn"><i class="fa-solid fa-magnifying-glass text-xs"></i></a>
+      <div class="flex flex-col items-stretch gap-1.5">
+        <a href="https://n2367537.yclients.com" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Записаться</a>
+        <a href="tel:+79660866106" class="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wide2 text-silverDeep hover:text-graphite transition">
+          <i class="fa-solid fa-phone-volume"></i> +7 966 086-61-06
+        </a>
       </div>
+    </div>
+
+    <button id="navToggle" class="xl:hidden text-graphite text-2xl shrink-0" aria-label="Открыть меню">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+  </div>
+
+  <div id="mobileNav" class="mobile-nav hidden-nav xl:hidden">
+    <div class="px-6 py-6 flex flex-col gap-5 text-sm uppercase tracking-wide2">
+      <a href="/#services">Услуги</a>
+      <a href="/about.html">О клинике</a>
+      <a href="/doctors.html">Врачи</a>
+      <a href="/events.html">События</a>
+      <a href="/zhurnal.html">Журнал</a>
+      <a href="/license.html">Лицензия</a>
+      <a href="/contacts.html">Контакты</a>
+      <a href="/search.html">Поиск</a>
+      <a href="https://n2367537.yclients.com" target="_blank" rel="noopener" class="btn btn-primary justify-center">Записаться</a>
+      <a href="tel:+79660866106" class="inline-flex items-center gap-2 text-silverDeep normal-case tracking-normal text-sm">
+        <i class="fa-solid fa-phone-volume"></i> +7 966 086-61-06
+      </a>
     </div>
   </div>
 </header>
