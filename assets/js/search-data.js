@@ -290,7 +290,7 @@ window.SITE_SERVICES = [
   {
     "title": "Что означает имя Beauty Expert Clinic: естественность, доказательная медицина и ничего лишнего",
     "desc": "Ребрендинг — это не только новое название. Рассказываем, какой подход стоит за именем Beauty Expert Clinic и почему мы выбрали именно его.",
-    "url": "event-filosofiya-yasna.html",
+    "url": "event-filosofiya-bec.html",
     "category": "События",
     "type": "event"
   },

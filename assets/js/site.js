@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Cookie consent banner (152-ФЗ / cookie notice)
   (function () {
     try {
-      var key = 'yasna_cookie_consent_v1';
+      var key = 'bec_cookie_consent_v1';
       var banner = document.getElementById('cookieBanner');
       if (banner && !localStorage.getItem(key)) { banner.classList.remove('hidden'); }
       var accept = document.getElementById('cookieAccept');
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var panel = document.getElementById('a11y-panel');
     if (!toggle || !panel) return;
     var html = document.documentElement;
-    var STORE = 'yasna_a11y_v1';
+    var STORE = 'bec_a11y_v1';
 
     function applyState(state) {
       html.classList.toggle('a11y-contrast', !!state.contrast);
@@ -171,6 +171,53 @@ document.addEventListener('DOMContentLoaded', function () {
         reachGoal('click_booking');
       }
     }, true);
+
+  // Footer lead form -> /api/lead (server relays to Telegram; see bec-lead-api/DEPLOY.md).
+  document.querySelectorAll('[data-lead-form]').forEach(function (form) {
+    var statusEl = form.querySelector('[data-lead-status]');
+    var submitBtn = form.querySelector('button[type="submit"]');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nameEl = form.querySelector('[name="name"]');
+      var phoneEl = form.querySelector('[name="phone"]');
+      var serviceEl = form.querySelector('[name="service"]');
+      var honeypotEl = form.querySelector('[name="website"]');
+      var name = nameEl ? nameEl.value.trim() : '';
+      var phone = phoneEl ? phoneEl.value.trim() : '';
+      var service = serviceEl ? serviceEl.value : '';
+
+      if (!name || !phone) {
+        if (statusEl) { statusEl.textContent = 'Заполните имя и телефон.'; statusEl.className = 'text-xs text-wine'; }
+        return;
+      }
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (statusEl) { statusEl.textContent = 'Отправляем…'; statusEl.className = 'text-xs text-silverDeep'; }
+
+      fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          phone: phone,
+          service: service,
+          page: location.pathname,
+          website: honeypotEl ? honeypotEl.value : ''
+        })
+      })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('bad status')); })
+        .then(function (data) {
+          if (!data || !data.ok) throw new Error('bad response');
+          if (statusEl) { statusEl.textContent = 'Спасибо! Мы свяжемся с вами в ближайшее время.'; statusEl.className = 'text-xs text-graphite'; }
+          form.reset();
+          if (typeof window.ym === 'function') { try { window.ym(111901755, 'reachGoal', 'submit_lead_form'); } catch (e) {} }
+        })
+        .catch(function () {
+          if (statusEl) { statusEl.innerHTML = 'Не получилось отправить форму. Позвоните нам: <a class="underline" href="tel:+79660866106">+7 966 086-61-06</a>'; statusEl.className = 'text-xs text-wine'; }
+        })
+        .finally(function () { if (submitBtn) submitBtn.disabled = false; });
+    });
+  });
 
     // Contact form submission (contacts.html — posts to FormSubmit.co).
     document.querySelectorAll('form[action*="formsubmit.co"]').forEach(function (form) {

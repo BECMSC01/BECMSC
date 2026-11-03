@@ -24,7 +24,7 @@
 <meta property="og:url" content="https://becmsc.ru/license.html" />
 <meta property="og:title" content="Цифровая лицензия — Beauty Expert Clinic" />
 <meta property="og:description" content="QR-код и выписка из реестра лицензий Росздравнадзора клиники Beauty Expert Clinic (приказ Минздрава России № 118н)." />
-<meta property="og:image" content="https://becmsc.ru/assets/img/logo/yasna-mark-color.png" />
+<meta property="og:image" content="https://becmsc.ru/assets/img/logo/bec-mark-color.png" />
 <meta property="og:image:width" content="900" />
 <meta property="og:image:height" content="1092" />
 <meta property="og:locale" content="ru_RU" />
@@ -32,7 +32,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Цифровая лицензия — Beauty Expert Clinic" />
 <meta name="twitter:description" content="QR-код и выписка из реестра лицензий Росздравнадзора клиники Beauty Expert Clinic (приказ Минздрава России № 118н)." />
-<meta name="twitter:image" content="https://becmsc.ru/assets/img/logo/yasna-mark-color.png" />
+<meta name="twitter:image" content="https://becmsc.ru/assets/img/logo/bec-mark-color.png" />
 
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -76,7 +76,7 @@
 <header id="site-header" class="sticky top-0 z-50 glass-header">
   <div class="max-w-8xl mx-auto px-5 sm:px-6 lg:px-10 xl:px-14 h-[92px] sm:h-[100px] flex items-center justify-between gap-4">
     <a href="/" class="flex items-center gap-3 group shrink-0">
-      <img src="/assets/img/logo/yasna-mark-color.png" alt="" class="h-[46px] sm:h-[55px] w-auto group-hover:opacity-80 transition" />
+      <img src="/assets/img/logo/bec-mark-color.png" alt="" class="h-[46px] sm:h-[55px] w-auto group-hover:opacity-80 transition" />
       <span class="flex flex-col leading-none">
         <span class="serif text-[18px] sm:text-[22px] uppercase tracking-wide2 text-wine group-hover:opacity-70 transition">Beauty Expert Clinic</span>
         <span class="hidden sm:block mt-1"><span class="block text-[9px] uppercase tracking-wide2 text-silverDeep whitespace-nowrap">Экспертная косметология</span></span>
@@ -191,7 +191,7 @@
   <div class="max-w-7xl mx-auto px-6 lg:px-10 py-20 grid grid-cols-1 lg:grid-cols-12 gap-12">
     <div class="lg:col-span-7 reveal">
       <div class="flex items-center gap-3 mb-6">
-        <img src="/assets/img/logo/yasna-mark-color.png" alt="" class="h-[64px] w-auto" />
+        <img src="/assets/img/logo/bec-mark-color.png" alt="" class="h-[64px] w-auto" />
         <span class="flex flex-col leading-none">
           <span class="serif text-[28px] uppercase tracking-wide2 text-wine">Beauty Expert Clinic</span>
           
@@ -213,7 +213,35 @@
     </div>
     <div class="lg:col-span-5 reveal">
       <h4 class="eyebrow">Запись на приём</h4>
-      <a href="https://n2367537.yclients.com" target="_blank" rel="noopener" class="btn btn-primary mt-4"><i class="fa-regular fa-calendar-check"></i> Записаться онлайн</a>
+      <h3 class="serif text-2xl sm:text-3xl text-graphite mt-3 leading-snug">Запишитесь <span class="italic">на сайте</span> прямо сейчас — и получите <span class="text-wine">3000 бонусных рублей</span> на первое посещение</h3>
+      <p class="text-silverDeep text-sm mt-3">Заполните форму или свяжитесь с нами самостоятельно для подбора удобного времени и подходящих услуг.</p>
+      <form class="mt-6 space-y-3" data-lead-form novalidate>
+        <input type="text" name="website" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <div>
+          <label class="text-[11px] uppercase tracking-wide2 text-silverDeep">Ваше имя</label>
+          <input type="text" name="name" required placeholder="Ольга Иванова" class="w-full mt-2 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-graphite transition" />
+        </div>
+        <div>
+          <label class="text-[11px] uppercase tracking-wide2 text-silverDeep">Ваш телефон</label>
+          <input type="tel" name="phone" required placeholder="+7 (___) ___-__-__" class="w-full mt-2 border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-graphite transition" />
+        </div>
+        <div>
+          <label class="text-[11px] uppercase tracking-wide2 text-silverDeep">Выберите услугу</label>
+          <select name="service" class="w-full mt-2 border border-line rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:border-graphite transition">
+            <option>Консультация</option>
+            <option>Эстетическая косметология</option>
+            <option>Инъекционная косметология</option>
+            <option>Аппаратная косметология</option>
+            <option>Инфузионная терапия (капельницы)</option>
+            <option>Лазерная эпиляция</option>
+            <option>Online консультации</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-full justify-center"><i class="fa-regular fa-paper-plane"></i> Отправить заявку</button>
+        <p data-lead-status class="text-xs text-silverDeep" aria-live="polite"></p>
+        <p class="text-[11px] text-silverDeep leading-relaxed">Нажимая «Отправить», вы соглашаетесь с <a href="/consent.html" class="underline">политикой обработки персональных данных</a>.</p>
+      </form>
+      <p class="mt-5 text-sm"><a href="https://n2367537.yclients.com" target="_blank" rel="noopener" class="underline text-graphite">Или записаться онлайн самостоятельно через систему записи →</a></p>
       <div class="mt-8 space-y-2 text-sm text-silverDeep">
         <p><i class="fa-solid fa-location-dot text-graphite mr-2"></i>г. Москва, ул. Ходынская, д. 2 (Западная башня)</p>
         <p><i class="fa-regular fa-clock text-graphite mr-2"></i>Ежедневно с 9:00 до 21:00 · по записи</p>
@@ -313,7 +341,7 @@
 <a href="https://t.me/BEclinic" target="_blank" rel="noopener" class="fab-tg" aria-label="Написать в Telegram"><i class="fa-brands fa-telegram text-xl"></i></a>
 <a href="https://n2367537.yclients.com" target="_blank" rel="noopener" class="fab-book" aria-label="Записаться онлайн" title="Записаться онлайн"><i class="fa-regular fa-calendar-check"></i><span>Записаться</span></a>
 
-<script src="/assets/js/site.js?v=20260824a"></script>
+<script src="/assets/js/site.js?v=20261103a"></script>
 <script src="/assets/js/search-data.js"></script>
 <script src="/assets/js/search.js"></script></body>
 </html>
