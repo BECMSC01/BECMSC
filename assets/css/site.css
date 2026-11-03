@@ -295,4 +295,39 @@ html[data-a11y-font="2"] body{ font-size:118%; }
 }
 @media (max-width:640px){ .fab-wa{ bottom:4.9rem; } .fab-tg{ bottom:8.8rem; } #a11y-toggle{ bottom:1rem; } }
 
+/* ---------- Lead form: status message (success/error/sending) ----------
+   Was plain 12px text in the same muted grey as the privacy-consent line
+   right below it (space-y-3 gives both just 12px gap) -> they visually
+   merged into one block of fine print. Now a distinct bordered/tinted
+   callout with an icon, clearly separated from the button above and the
+   consent text below, on both mobile and desktop. */
+[data-lead-form] [data-lead-status]{
+  display:none;
+  align-items:flex-start;
+  gap:.55rem;
+  margin:.15rem 0 1rem;
+  padding:.8rem .95rem;
+  border-radius:var(--radius-sm);
+  font-family:var(--font-sans);
+  font-size:13px;
+  line-height:1.5;
+  font-weight:600;
+}
+[data-lead-form] [data-lead-status].is-visible{ display:flex; }
+[data-lead-form] [data-lead-status] i{ margin-top:.2rem; font-size:14px; flex:none; }
+[data-lead-form] [data-lead-status] a{ font-weight:600; }
+[data-lead-form] [data-lead-status].lead-status--info{
+  background:var(--white); color:var(--silver-deep); border:1px solid var(--line);
+}
+[data-lead-form] [data-lead-status].lead-status--ok{
+  background:rgba(88,116,119,.1); color:var(--wine-deep); border:1px solid rgba(88,116,119,.35);
+}
+[data-lead-form] [data-lead-status].lead-status--err{
+  background:rgba(122,31,31,.07); color:var(--danger); border:1px solid rgba(122,31,31,.3);
+}
+/* extra separation from the submit button above and the consent line below,
+   beyond the form's default space-y-3 gap */
+[data-lead-form] button[type="submit"]{ margin-bottom:.35rem; }
+[data-lead-form] > p:last-child{ margin-top:.1rem; }
+
 }

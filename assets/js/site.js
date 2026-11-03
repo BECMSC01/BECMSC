@@ -187,12 +187,12 @@ document.addEventListener('DOMContentLoaded', function () {
       var service = serviceEl ? serviceEl.value : '';
 
       if (!name || !phone) {
-        if (statusEl) { statusEl.textContent = 'Заполните имя и телефон.'; statusEl.className = 'text-xs text-wine'; }
+        if (statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><span>Заполните имя и телефон.</span>'; statusEl.className = 'lead-status is-visible lead-status--err'; }
         return;
       }
 
       if (submitBtn) submitBtn.disabled = true;
-      if (statusEl) { statusEl.textContent = 'Отправляем…'; statusEl.className = 'text-xs text-silverDeep'; }
+      if (statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i><span>Отправляем…</span>'; statusEl.className = 'lead-status is-visible lead-status--info'; }
 
       fetch('/api/lead', {
         method: 'POST',
@@ -208,12 +208,12 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('bad status')); })
         .then(function (data) {
           if (!data || !data.ok) throw new Error('bad response');
-          if (statusEl) { statusEl.textContent = 'Спасибо! Мы свяжемся с вами в ближайшее время.'; statusEl.className = 'text-xs text-graphite'; }
+          if (statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>Спасибо! Мы свяжемся с вами в ближайшее время.</span>'; statusEl.className = 'lead-status is-visible lead-status--ok'; }
           form.reset();
           if (typeof window.ym === 'function') { try { window.ym(111901755, 'reachGoal', 'submit_lead_form'); } catch (e) {} }
         })
         .catch(function () {
-          if (statusEl) { statusEl.innerHTML = 'Не получилось отправить форму. Позвоните нам: <a class="underline" href="tel:+79660866106">+7 966 086-61-06</a>'; statusEl.className = 'text-xs text-wine'; }
+          if (statusEl) { statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span>Не получилось отправить форму. Позвоните нам: <a class="underline" href="tel:+79660866106">+7 966 086-61-06</a></span>'; statusEl.className = 'lead-status is-visible lead-status--err'; }
         })
         .finally(function () { if (submitBtn) submitBtn.disabled = false; });
     });
