@@ -22,4 +22,4 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
-Sitemap: https://becmsc.ru/sitemap.xml
+Sitemap: https://beautyexpertclinic.ru/sitemap.xml
