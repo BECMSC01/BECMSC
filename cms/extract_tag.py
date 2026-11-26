@@ -14,6 +14,17 @@
      (raw-slicing), а не через bs4.decode_contents() - у bs4/html.parser
      есть особенность терять пробелы отступов в чисто пробельных
      текстовых узлах между тегами при сериализации.
+  4. Для type="image" (<img>) значение - путь src, плюс (если картинка
+     внутри <picture> с <source type="image/webp">) путь к webp-паре -
+     отдельным полем "webp" в seed-записи. Сам src НИКОГДА не меняется
+     в HTML - замена картинки в будущем работает подменой ФАЙЛА по тому
+     же пути при сборке (см. cms/build.py), а не правкой разметки.
+
+ВАЖНО про повторный запуск: счётчик ключей "{file}-{n}" для каждого
+файла стартует не с 0, а с МАКСИМАЛЬНОГО уже существующего суффикса для
+этого файла в seed - иначе при повторном запуске (например, чтобы
+добавить новый тип полей вроде картинок) новые ключи получили бы те же
+номера, что уже заняты другими, ранее размеченными элементами.
 
 Запуск: python3 cms/extract_tag.py              (меняет .html на месте)
         python3 cms/extract_tag.py --dry-run     (только отчёт)
@@ -40,25 +51,46 @@ META_SELECTORS = [
     ("meta", {"name": "twitter:description"}),
 ]
 
+EXTERNAL_PREFIXES = ("data:", "http://", "https://", "//")
+
+
+def _webp_pair_for(img_tag):
+    """Если img внутри <picture> с <source type="image/webp">, возвращает
+    путь из его srcset. Иначе None."""
+    parent = img_tag.parent
+    if parent is None or parent.name != "picture":
+        return None
+    for source in parent.find_all("source"):
+        type_attr = (source.get("type") or "").lower()
+        srcset = (source.get("srcset") or "").strip()
+        if not srcset:
+            continue
+        if "webp" in type_attr or srcset.lower().split("?")[0].endswith(".webp"):
+            first = srcset.split(",")[0].strip().split(" ")[0]
+            if first:
+                return first
+    return None
+
 
 def collect_targets(soup, file_stem, counter):
-    """Возвращает список (tag, key, ftype, provisional_value).
+    """Возвращает список (tag, key, ftype, provisional_value, extra).
     provisional_value для ftype='html' - ЗАГЛУШКА, настоящее значение
-    вычисляется позже через raw-slicing в main()."""
+    вычисляется позже через raw-slicing в main(). extra - доп. метаданные
+    (сейчас используется только для ftype='image': {'webp': '...'} либо None."""
     targets = []
 
     title_tag = soup.find("title")
     if title_tag and not title_tag.has_attr("data-cms") and title_tag.string:
         counter[0] += 1
         key = f"{file_stem}-{counter[0]}"
-        targets.append((title_tag, key, "title", title_tag.string.strip()))
+        targets.append((title_tag, key, "title", title_tag.string.strip(), None))
 
     for name, attrs in META_SELECTORS:
         tag = soup.find(name, attrs=attrs)
         if tag and tag.has_attr("content") and not tag.has_attr("data-cms") and tag["content"].strip():
             counter[0] += 1
             key = f"{file_stem}-{counter[0]}"
-            targets.append((tag, key, "meta", tag["content"].strip()))
+            targets.append((tag, key, "meta", tag["content"].strip(), None))
 
     def walk(el):
         kind, payload = classify(el)
@@ -69,19 +101,30 @@ def collect_targets(soup, file_stem, counter):
                 if isinstance(child, Tag):
                     walk(child)
             return
+        extra = None
         if kind in ("leaf-text", "leaf-text-icons"):
             value = payload.strip()
             ftype = "text"
         elif kind == "leaf-html":
             value = None  # вычислим позже через raw-slicing
             ftype = "html"
+        elif kind == "leaf-image":
+            img_tag = payload
+            src = (img_tag.get("src") or "").strip()
+            if not src or src.startswith(EXTERNAL_PREFIXES):
+                return  # нет локального файла - нечем управлять
+            webp = _webp_pair_for(img_tag)
+            value = src
+            ftype = "image"
+            if webp:
+                extra = {"webp": webp}
         else:
             return
         if ftype == "text" and not value:
             return
         counter[0] += 1
         key = f"{file_stem}-{counter[0]}"
-        targets.append((el, key, ftype, value))
+        targets.append((el, key, ftype, value, extra))
 
     body = soup.find("body") or soup
     for child in list(body.children):
@@ -95,7 +138,7 @@ def resolve_html_values(raw_text, targets):
     """Для ftype='html' вычисляет настоящее значение через raw-slicing."""
     line_starts = build_line_starts(raw_text)
     resolved = []
-    for tag, key, ftype, value in targets:
+    for tag, key, ftype, value, extra in targets:
         if ftype == "html":
             lt_offset = to_abs_offset(line_starts, tag.sourceline, tag.sourcepos)
             open_end = find_insertion_point(raw_text, lt_offset) + 1  # после '>'
@@ -103,7 +146,7 @@ def resolve_html_values(raw_text, targets):
             # НЕ .strip() - сохраняем пробелы/отступы байт-в-байт, чтобы
             # сборка без правок давала идентичный исходному файлу результат.
             value = raw_text[open_end:close_start]
-        resolved.append((tag, key, ftype, value))
+        resolved.append((tag, key, ftype, value, extra))
     return resolved
 
 
@@ -130,10 +173,21 @@ def apply_insertions(raw_text, targets):
         # уже был пробел - тогда в шаблоне будет двойной пробел, это
         # безвредно и невидимо). Это гарантирует, что при сборке, когда
         # ' data-cms="key"' вырезается обратно, исходный пробел перед '/'
-        # или '>' восстанавливается idiotично.
+        # или '>' восстанавливается идентично.
         snippet = f' data-cms="{key}"'
         text = text[:insert_at] + snippet + text[insert_at:]
     return text
+
+
+def _existing_max_suffix(seed, file_stem):
+    prefix = f"{file_stem}-"
+    best = 0
+    for k in seed:
+        if k.startswith(prefix):
+            suffix = k[len(prefix):]
+            if suffix.isdigit():
+                best = max(best, int(suffix))
+    return best
 
 
 def main():
@@ -155,18 +209,23 @@ def main():
             continue
         raw = path.read_text(encoding="utf-8")
         soup = BeautifulSoup(raw, "html.parser")
-        counter = [0]
+        # Счётчик продолжается ПОСЛЕ уже занятых номеров для этого файла -
+        # см. пояснение в шапке модуля.
+        counter = [_existing_max_suffix(seed, file_stem)]
         targets = collect_targets(soup, file_stem, counter)
         targets = resolve_html_values(raw, targets)
 
         new_count = 0
         to_insert = []
-        for tag, key, ftype, value in targets:
+        for tag, key, ftype, value, extra in targets:
             if key in seed:
                 continue
             if not value:
                 continue
-            seed[key] = {"type": ftype, "value": value, "file": file_stem}
+            entry = {"type": ftype, "value": value, "file": file_stem}
+            if extra:
+                entry.update(extra)
+            seed[key] = entry
             to_insert.append((tag, key))
             new_count += 1
 

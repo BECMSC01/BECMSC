@@ -17,10 +17,15 @@
           теги не трогаем - ищем точное вхождение ИСХОДНОГО текста
           внутри элемента и заменяем его на текущий)
   html  - весь innerHTML элемента целиком (для абзацев со ссылками и т.п.)
+  image - <img>. HTML НЕ меняется (src остаётся тем же путём) - замена
+          картинки работает подменой ФАЙЛА по этому пути в выходной
+          директории (см. apply_image_overlays). Если у поля есть пара
+          "webp" (картинка внутри <picture> с <source type="image/webp">),
+          webp-версия подменяется тем же способом по своему пути.
 
 Запуск:
-  python3 cms/build.py --out /var/www/becmsc --content /opt/bec-admin/content.json
-  python3 cms/build.py --out dist --content cms/content.seed.json   (для локальной проверки)
+  python3 cms/build.py --out /var/www/becmsc --content /opt/bec-admin/content.json --uploads /opt/bec-admin/uploads
+  python3 cms/build.py --out dist --content cms/content.seed.json   (для локальной проверки, без картинок)
 """
 import argparse
 import html as html_mod
@@ -116,6 +121,38 @@ def apply_content(raw_text, soup, content):
     return text
 
 
+def apply_image_overlays(out_dir: pathlib.Path, content: dict, uploads_dir):
+    """Для полей type="image" с загруженной заменой (content[key]["replaced"]
+    истинно) - перезаписывает файл(ы) в out_dir поверх уже скопированной
+    "родной" картинки из шаблонов. HTML не трогается: src остаётся тем же
+    путём что и был, подменяется только содержимое файла по этому пути.
+    Если у поля есть пара "webp", подменяется и она - отдельным файлом
+    <key>.webp в uploads_dir, по пути из entry["webp"].
+    Возвращает количество подменённых файлов (основных, без webp)."""
+    if uploads_dir is None or not uploads_dir.exists():
+        return 0
+    applied = 0
+    for key, entry in content.items():
+        if entry.get("type") != "image" or not entry.get("replaced"):
+            continue
+        target_rel = entry["value"].lstrip("/")
+        ext = pathlib.Path(target_rel).suffix
+        src_upload = uploads_dir / f"{key}{ext}"
+        if src_upload.exists():
+            target_path = out_dir / target_rel
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_upload, target_path)
+            applied += 1
+        webp_rel = entry.get("webp")
+        if webp_rel:
+            webp_upload = uploads_dir / f"{key}.webp"
+            if webp_upload.exists():
+                webp_target = out_dir / webp_rel.lstrip("/")
+                webp_target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(webp_upload, webp_target)
+    return applied
+
+
 def load_content(content_path: pathlib.Path):
     content = json.loads(content_path.read_text(encoding="utf-8"))
     if SEED_PATH.exists():
@@ -130,10 +167,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True, help="выходная директория (например /var/www/becmsc)")
     ap.add_argument("--content", required=True, help="путь к content.json (текущие значения)")
+    ap.add_argument("--uploads", default=None, help="папка с загруженными заменами картинок (необязательно)")
     args = ap.parse_args()
 
     out_dir = pathlib.Path(args.out)
     content_path = pathlib.Path(args.content)
+    uploads_dir = pathlib.Path(args.uploads) if args.uploads else None
     content = load_content(content_path)
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -165,7 +204,10 @@ def main():
         new_text = _re.sub(r' data-cms="[^"]*"', "", new_text)
         (out_dir / path.name).write_text(new_text, encoding="utf-8")
 
-    print(f"Готово. Файлов с применённым контентом: {changed}. Выход: {out_dir}")
+    # 3) Накладываем загруженные через админку замены картинок (если есть)
+    n_images = apply_image_overlays(out_dir, content, uploads_dir)
+
+    print(f"Готово. Файлов с применённым контентом: {changed}. Картинок заменено: {n_images}. Выход: {out_dir}")
 
 
 if __name__ == "__main__":

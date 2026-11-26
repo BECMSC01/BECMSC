@@ -95,14 +95,31 @@ def main():
         if len(occurrences) < MIN_SHARED:
             continue
         tag_name, attrs_sig, ftype, value = sig
-        base_slug = slugify(value)
+        if ftype == "image":
+            # для картинок используем имя файла без расширения, а не весь
+            # путь - иначе slug получается длинным и малочитаемым
+            base_slug = slugify(pathlib.Path(value).stem)
+        else:
+            base_slug = slugify(value)
         canonical_key = f"global-{base_slug}"
         suffix = 1
         while canonical_key in seed and seed[canonical_key].get("value") != value:
             suffix += 1
             canonical_key = f"global-{base_slug}-{suffix}"
 
-        seed[canonical_key] = {"type": ftype, "value": value, "file": "global", "shared_count": len(occurrences)}
+        # для картинок переносим доп.метаданные (webp-пару и т.п.) из
+        # оригинальной записи - иначе они бы потерялись при объединении
+        extra = {}
+        if ftype == "image":
+            first_fname, first_key = occurrences[0]
+            orig_entry = seed.get(first_key) or {}
+            if orig_entry.get("webp"):
+                extra["webp"] = orig_entry["webp"]
+
+        seed[canonical_key] = {
+            "type": ftype, "value": value, "file": "global",
+            "shared_count": len(occurrences), **extra,
+        }
 
         by_file = defaultdict(list)
         for fname, key in occurrences:

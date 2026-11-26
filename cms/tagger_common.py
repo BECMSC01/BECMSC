@@ -44,17 +44,20 @@ def classify(el: Tag):
       ('leaf-text', text_node)       # единственный прямой текстовый узел
       ('leaf-text-icons', text_node) # текстовый узел среди иконок
       ('leaf-html', None)            # весь innerHTML - один блок
+      ('leaf-image', img_tag)        # <img> - картинка (src + опц. webp-пара)
     """
     if not isinstance(el, Tag):
         return ("skip", None)
+    if el.has_attr("data-cms"):
+        # уже размечен в прошлом запуске - не трогаем повторно
+        return ("skip", None)
+    if el.name == "img":
+        return ("leaf-image", el)
     if el.name in SKIP_TAGS:
         return ("skip", None)
     for marker in DYNAMIC_MARKERS:
         if el.has_attr(marker):
             return ("skip", None)
-    if el.has_attr("data-cms"):
-        # уже размечен в прошлом запуске - не трогаем повторно
-        return ("skip", None)
 
     children = list(el.children)
     element_children = [c for c in children if isinstance(c, Tag)]
