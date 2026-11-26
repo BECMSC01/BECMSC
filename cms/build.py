@@ -23,6 +23,17 @@
           "webp" (картинка внутри <picture> с <source type="image/webp">),
           webp-версия подменяется тем же способом по своему пути.
 
+          Исключение - "отделённые" поля (entry["split_of"] задан): это
+          поле описывает ОДНО конкретное вхождение общей (global) картинки
+          на ОДНОЙ конкретной странице (entry["split_file"] +
+          entry["split_occurrence"] - 0-based номер по порядку среди всех
+          data-cms=<split_of> в этом файле), которое должно показывать
+          СВОЮ картинку независимо от остальных вхождений. Для него (и
+          только для него) build.py переписывает src/srcset именно этого
+          вхождения на отдельный путь assets/img/_split/<ключ>.<ext> - это
+          единственный случай, когда HTML в выходной директории содержит
+          другой src, чем в шаблоне (см. apply_image_splits).
+
 Запуск:
   python3 cms/build.py --out /var/www/becmsc --content /opt/bec-admin/content.json --uploads /opt/bec-admin/uploads
   python3 cms/build.py --out dist --content cms/content.seed.json   (для локальной проверки, без картинок)
@@ -31,6 +42,7 @@ import argparse
 import html as html_mod
 import json
 import pathlib
+import re
 import shutil
 import sys
 
@@ -67,7 +79,62 @@ def find_attr_value_span(text, tag_start, attr_name):
     return value_start, value_end
 
 
-def apply_content(raw_text, soup, content):
+def split_output_rel(split_key: str, original_value: str) -> str:
+    """Путь (относительно корня выходной директории, без ведущего "/"),
+    по которому лежит ПРИВАТНАЯ копия картинки для отделённого поля -
+    чтобы не делить физический файл с остальными вхождениями общей
+    картинки (см. docstring модуля)."""
+    ext = pathlib.Path(original_value).suffix
+    safe = re.sub(r"[^a-zA-Z0-9_-]", "-", split_key)
+    return f"assets/img/_split/{safe}{ext}"
+
+
+def apply_image_splits(raw_text, soup, content, file_stem, line_starts, edits):
+    """Добавляет в edits правки src/srcset для "отделённых" вхождений
+    общих картинок, которые относятся к файлу file_stem (см. docstring
+    модуля). Если разметка страницы с тех пор изменилась настолько, что
+    нужного вхождения больше нет - пропускаем с предупреждением в stdout
+    (сайт всё равно соберётся, просто это место останется показывать
+    общую картинку, как было бы без отделения)."""
+    split_entries = [
+        (k, e) for k, e in content.items()
+        if e.get("type") == "image" and e.get("split_of") and e.get("split_file") == file_stem
+    ]
+    if not split_entries:
+        return
+
+    by_parent = {}
+    for k, e in split_entries:
+        by_parent.setdefault(e["split_of"], []).append((k, e))
+
+    for parent_key, items in by_parent.items():
+        occurrences = soup.find_all(attrs={"data-cms": parent_key})
+        for split_key, e in items:
+            idx = e.get("split_occurrence", -1)
+            if not (0 <= idx < len(occurrences)):
+                print(f"WARNING: отделённое поле {split_key}: вхождение {idx} поля {parent_key} "
+                      f"не найдено в {file_stem}.html (разметка страницы изменилась?) - "
+                      f"оставляю как общую картинку")
+                continue
+            tag = occurrences[idx]
+            lt_offset = to_abs_offset(line_starts, tag.sourceline, tag.sourcepos)
+            if raw_text[lt_offset] != "<":
+                print(f"WARNING: отделённое поле {split_key}: не нашёл '<' на ожидаемой позиции - пропускаю")
+                continue
+
+            v_start, v_end = find_attr_value_span(raw_text, lt_offset, "src")
+            edits.append((v_start, v_end, esc("/" + split_output_rel(split_key, e["value"]))))
+
+            if e.get("webp"):
+                picture = tag.find_parent("picture")
+                source_tag = picture.find("source", attrs={"type": "image/webp"}) if picture else None
+                if source_tag is not None:
+                    src_lt = to_abs_offset(line_starts, source_tag.sourceline, source_tag.sourcepos)
+                    sv_start, sv_end = find_attr_value_span(raw_text, src_lt, "srcset")
+                    edits.append((sv_start, sv_end, esc("/" + split_output_rel(split_key, e["webp"]))))
+
+
+def apply_content(raw_text, soup, content, file_stem=None):
     line_starts = build_line_starts(raw_text)
 
     # Собираем список правок (replace_start, replace_end, new_text),
@@ -114,6 +181,9 @@ def apply_content(raw_text, soup, content):
             close_start = find_matching_close(raw_text, open_end, tag.name)
             edits.append((open_end, close_start, new_value))
 
+    if file_stem is not None:
+        apply_image_splits(raw_text, soup, content, file_stem, line_starts, edits)
+
     edits.sort(key=lambda e: e[0], reverse=True)
     text = raw_text
     for start, end, new_text in edits:
@@ -135,8 +205,9 @@ def apply_image_overlays(out_dir: pathlib.Path, content: dict, uploads_dir):
     for key, entry in content.items():
         if entry.get("type") != "image" or not entry.get("replaced"):
             continue
-        target_rel = entry["value"].lstrip("/")
-        ext = pathlib.Path(target_rel).suffix
+        is_split = bool(entry.get("split_of"))
+        target_rel = split_output_rel(key, entry["value"]) if is_split else entry["value"].lstrip("/")
+        ext = pathlib.Path(entry["value"]).suffix
         src_upload = uploads_dir / f"{key}{ext}"
         if src_upload.exists():
             target_path = out_dir / target_rel
@@ -147,7 +218,8 @@ def apply_image_overlays(out_dir: pathlib.Path, content: dict, uploads_dir):
         if webp_rel:
             webp_upload = uploads_dir / f"{key}.webp"
             if webp_upload.exists():
-                webp_target = out_dir / webp_rel.lstrip("/")
+                webp_target_rel = split_output_rel(key, webp_rel) if is_split else webp_rel.lstrip("/")
+                webp_target = out_dir / webp_target_rel
                 webp_target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(webp_upload, webp_target)
     return applied
@@ -196,12 +268,11 @@ def main():
         soup = BeautifulSoup(raw, "html.parser")
         if not soup.find(attrs={"data-cms": True}):
             continue  # нечего подставлять (например yandex-verification файл)
-        new_text = apply_content(raw, soup, content)
+        new_text = apply_content(raw, soup, content, file_stem=path.stem)
         if new_text != raw:
             changed += 1
         # в финальной выдаче служебный атрибут data-cms не нужен
-        import re as _re
-        new_text = _re.sub(r' data-cms="[^"]*"', "", new_text)
+        new_text = re.sub(r' data-cms="[^"]*"', "", new_text)
         (out_dir / path.name).write_text(new_text, encoding="utf-8")
 
     # 3) Накладываем загруженные через админку замены картинок (если есть)
