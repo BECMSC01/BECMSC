@@ -6,9 +6,23 @@
 cookie-баннер и т.п.), в ОДИН общий ключ "global-...". Так правка
 одного такого поля в админке сразу применяется ко всем страницам.
 
-Безопасно: объединяются только поля, у которых ПОЛНОСТЬЮ совпадают
-тег + все остальные атрибуты + текущее значение - случайное совпадение
+Безопасно: текстовые/html-поля объединяются только если у них ПОЛНОСТЬЮ
+совпадают тег + все остальные атрибуты + текущее значение, и такое
+совпадение встречается не меньше MIN_SHARED раз - случайное совпадение
 короткого текста с разными ссылками/контекстом не объединяется.
+
+Картинки - особый случай: объединяются по ОДНОМУ ТОЛЬКО пути к файлу
+(+ webp-паре), независимо от тега/атрибутов и при ЛЮБОМ количестве
+повторов от двух и выше. Это не эвристика, а необходимость: замена
+картинки в build.py работает подменой ФАЙЛА по пути на диске (см.
+apply_image_overlays) - если два РАЗНЫХ data-cms ключа указывают на
+один и тот же файл (например, одна и та же фотография использована
+и как размытый фон, и как чёткий передний план - частый приём на
+карточках услуг), то правка одного из них физически меняет файл,
+который показывает и другой, даже если их не объединить в seed.
+Поэтому для картинок два ключа с одинаковым путём ВСЕГДА должны стать
+одним общим полем - иначе админка будет лгать, показывая их как два
+независимых поля, хотя правка одного молча меняет и второе.
 
 Запуск: python3 cms/consolidate_global.py            (применяет)
         python3 cms/consolidate_global.py --dry-run   (только отчёт)
@@ -86,15 +100,27 @@ def main():
             entry = seed[key]
             if entry["type"] == "text" and is_data_like(entry["value"]):
                 continue  # цена/длительность/число - всегда отдельное поле
-            sig = (tag.name, attrs_signature(tag), entry["type"], entry["value"])
+            if entry["type"] == "image":
+                # Картинки группируем СТРОГО по физическому файлу (путь +
+                # webp-пара), тег/атрибуты не важны - см. пояснение в шапке
+                # модуля. tag_name/attrs_sig здесь не используются.
+                sig = ("__image__", None, "image", (entry["value"], entry.get("webp")))
+            else:
+                sig = (tag.name, attrs_signature(tag), entry["type"], entry["value"])
             groups[sig].append((path.name, key))
 
     merges = 0
     renamed_total = 0
     for sig, occurrences in groups.items():
-        if len(occurrences) < MIN_SHARED:
-            continue
         tag_name, attrs_sig, ftype, value = sig
+        webp = None
+        if ftype == "image":
+            value, webp = value  # распаковываем (путь, webp) из sig
+
+        min_required = 2 if ftype == "image" else MIN_SHARED
+        if len(occurrences) < min_required:
+            continue
+
         if ftype == "image":
             # для картинок используем имя файла без расширения, а не весь
             # путь - иначе slug получается длинным и малочитаемым
@@ -107,14 +133,9 @@ def main():
             suffix += 1
             canonical_key = f"global-{base_slug}-{suffix}"
 
-        # для картинок переносим доп.метаданные (webp-пару и т.п.) из
-        # оригинальной записи - иначе они бы потерялись при объединении
         extra = {}
-        if ftype == "image":
-            first_fname, first_key = occurrences[0]
-            orig_entry = seed.get(first_key) or {}
-            if orig_entry.get("webp"):
-                extra["webp"] = orig_entry["webp"]
+        if ftype == "image" and webp:
+            extra["webp"] = webp
 
         seed[canonical_key] = {
             "type": ftype, "value": value, "file": "global",
